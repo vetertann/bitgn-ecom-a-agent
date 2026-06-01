@@ -1,0 +1,48 @@
+flowchart TB
+    subgraph PROMPT["Prompt layers"]
+        direction LR
+        SP["<b>System prompt</b><br/>benchmark-<br/>and model-agnostic"]
+        SK["<b>SKILL</b><br/>ecom.md<br/>(domain)"]
+        PS["<b>PRESUBMIT_SKILL</b><br/>presubmit.md<br/>(refs polish)"]
+    end
+
+    PRELUDE["<b>Prelude (turn 0)</b><br/>tree /, tree /docs, AGENTS.MD,<br/>/bin/date, /bin/id, checklist, task"]
+
+    MODEL[["<b>Model providers</b><br/>Anthropic · OpenAI · Nebius ·<br/>OpenRouter · DeepSeek · Cerebras<br/><i>prompt_json default · native optional</i>"]]
+
+    TC{"<b>{thought, code}</b><br/>schema-repair × 3"}
+
+    EXEC["<b>exec(code, globals)</b><br/>persistent in-process REPL"]
+
+    subgraph GLOBALS["Globals survive across turns"]
+        direction LR
+        WS["<b>ws facade</b><br/>read · write · search · find ·<br/>stat · tree · list · exec"]
+        SCR["<b>scratchpad</b><br/>gates · draft ·<br/>answer · outcome · refs"]
+        PRIM["<b>anomaly_clusters</b><br/>+ user vars<br/>(parsed TSVs, partial<br/>solutions, etc.)"]
+        SUB["<b>submit</b><br/><b>verify_scratchpad</b>"]
+    end
+
+    VM[("<b>BitGN VM · gRPC</b><br/>/proc/* records · /docs/* policies<br/>AGENTS.MD · /bin/sql · /bin/jq ·<br/>/bin/checkout · /bin/refund · ...")]
+
+    OBS["<b>Observation</b><br/>STDOUT + SCRATCHPAD<br/>+ optional ERROR + hint"]
+
+    subgraph SUBMIT["Two-phase staged submit"]
+        direction LR
+        STAGE1["<b>1. stage</b><br/>write scratchpad['draft']<br/>inject PRESUBMIT_SKILL"]
+        STAGE2["<b>2. confirm</b><br/>identical resubmit<br/>→ ws.answer(...)"]
+        STAGE1 -.->|next turn| STAGE2
+    end
+
+    DONE((("trace +<br/>score")))
+
+    PROMPT --> MODEL
+    PRELUDE --> MODEL
+    MODEL --> TC
+    TC -->|valid| EXEC
+    TC -.->|invalid · typed repair| MODEL
+    EXEC <--> GLOBALS
+    WS <--> VM
+    EXEC --> OBS
+    OBS -->|next turn · ≤50 · target 2–3| MODEL
+    SUB --> SUBMIT
+    STAGE2 --> DONE
