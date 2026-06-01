@@ -4,7 +4,7 @@
 
 The challenge: BitGN's E-commerce challenge, featuring COLIBRIX ONE as lead partner, is a benchmark for agentic commerce — a simulated environment where AI agents handle the full customer journey (discovery, checkout, payment failures, fraud, returns, support) under business constraints. The goal is to test whether an agent can act safely before similar systems touch live commerce infrastructure.
 
-Note: this repo is intentionally small — ~1.2K LOC of agent core plus two hot-loaded markdown skills. CodeAct itself isn't new; the discipline that produced this version of it is the point.
+Note: this repo is intentionally small — ~1.2K LOC of agent core plus two hot-loaded markdown skills. CodeAct (code as a tool) itself isn't new; the training discipline that produced this version of it is the point. First you train the workspace, then the domain skill.
 
 The system prompt (the version used during the blind window) lives in `agent.py`. Domain knowledge in `Skills/ecom.md`. Answer-review checklist in `Skills/presubmit.md`.
 
@@ -98,31 +98,30 @@ flowchart TB
 - **Scratchpad** — JSON dict surviving across `execute_python` calls. Holds gates, draft, answer, outcome, refs.
 - **Gates** — `identity`, `trust`, `rule-conflict`, `pre-write scope`, `pre-delete scope`. Set `"YES"` / `"NO"` / `"BLOCKED"`. `verify_scratchpad` (28 lines, in `verify.py`) blocks `OUTCOME_OK` if any gate is `"NO"`.
 - **Two-phase staged submit** — first `submit(...)` stages the answer and injects the presubmit checklist as the next observation. The model gets a full Python turn to verify, recompute, or revise before an identical second `submit(...)` finalizes `ws.answer(...)`.
-- **Six providers, one loop** — Anthropic, OpenAI, Nebius, OpenRouter, DeepSeek, Cerebras. Native function calling or `prompt_json` (JSON-in-text), selected per run.
-- **Domain primitive** — `cluster_tools.anomaly_clusters(ws, ...)` ships the SQL + haversine + implied-speed logic for fraud tasks as code, so the model decides verdicts instead of rewriting math.
+- **Any model** — Anthropic, OpenAI, Nebius, OpenRouter, DeepSeek, Cerebras. Native function calling is flaking, so best use is`prompt_json` (JSON-in-text), selected per run.
+- **Domain tools** — just one, `cluster_tools.anomaly_clusters(ws, ...)` ships the SQL + haversine + implied-speed logic for fraud tasks as code, so the model decides verdicts instead of rewriting math.
 
 Target call structure: 2–3 `execute_python` calls per task — call 1 batches reads, call 2 decides + writes + submits, call 3 recovers if needed.
 
-## Thoughts
+## What is different
 
-A few things I took away from building this. Not universal truths — just what worked here.
+The hypothesis was to separate workspace training and domain training. Agent supposed to be universal at the core.
 
 ### The system prompt is the constant; everything else is swappable
 
-Same system prompt scored **75/104** on PAC1 with no skill, **104/104** with a 50-line `pac1.md`, then **11/12** on the first ECOM dev cut with no skill again. Three benchmarks, zero edits to the prompt. Domain instincts live in separate markdown; the prompt only carries the Enterprise OS shell — `AGENTS.MD` as authority, `/proc + /docs` shape, `/bin/*` runtime. Anything narrower would have coupled it to one benchmark.
+SAME system prompt (just toolset changed a bit) scored **75/104** on PAC1 with no skill, **104/104** with a 50-line `pac1.md`, then **11/12** on the first ECOM dev cut with no skill again.  
+Domain skills live in separate markdown; the system prompt only carries the Enterprise OS shell — `AGENTS.MD` as authority, `/proc + /docs` shape, `/bin/*` runtime. 
 
 ### Bitter Lesson as a regression test
 
-A change shipped only if a *stronger* model already did better than a weaker one on the bare prompt — before any domain skill. If a smaller model gained while a bigger model regressed, the change was overfit to the smaller model's weaknesses, not to the structure. The leaderboard gap (Qwen 68.1 → GPT-5.5 81.3 on the same agent) is the same check measured on the blind set.
-
-### Structure beats maxims, and the receipts are short
-
-The precondition that gates the whole architecture is **28 lines** — `verify_scratchpad` checks: non-empty answer, valid outcome, list of string refs, gates a dict, `OUTCOME_OK` forbidden when any gate is `"NO"`. The alternative was paragraphs in the prompt asking the model to be careful. Twenty-eight lines you can measure.
+A change shipped only if a *stronger* model already did better than a weaker one on the bare prompt — before any domain skill. If a smaller model gained while a bigger model regressed, the change was overfit to the smaller model's weaknesses, not to the structure. The leaderboard gap (Qwen 68.1 → GPT-5.5 81.3 on the same agent) is the same check measured on the blind set. I have overengeered my agent on duruing PAC1, so that's lesson learned for me too.
 
 ### Two-phase staged submit
 
-A presubmit checklist injected as an observation, with a full Python turn to verify or revise before the identical second `submit(...)` actually fires `ws.answer(...)`. Cheap to add, measurable lift on accuracy. The cost gradient pushes toward confirmation; the checklist routes attention to the draft.
+Added most of ECOM scores. A presubmit checklist injected as an observation, with a full Python turn to verify or revise before the identical second `submit(...)` actually fires `ws.answer(...)`. 
 
-### Prepare the runtime for the agent
+### Domain tools
 
-For fraud-style work, `anomaly_clusters(ws, ...)` ships the SQL, haversine, and implied-speed logic as code. The model decides verdicts; it doesn't rewrite the math. Most prompt instructions that repeat across tasks are primitives in disguise.
+For fraud-style work, `anomaly_clusters(ws, ...)` ships the SQL, haversine, and implied-speed logic as code. The model decides verdicts. 
+
+Precise grounding was the main source of errors, so it probably required separate appoach but I did not finish it before main event.
