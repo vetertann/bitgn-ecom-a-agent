@@ -4,7 +4,9 @@
 
 The challenge: BitGN's E-commerce challenge, featuring COLIBRIX ONE as lead partner, is a benchmark for agentic commerce — a simulated environment where AI agents handle the full customer journey (discovery, checkout, payment failures, fraud, returns, support) under business constraints. The goal is to test whether an agent can act safely before similar systems touch live commerce infrastructure.
 
-Note: this repo is intentionally small — ~1.2K LOC of agent core plus two hot-loaded markdown skills. CodeAct (code as a tool) itself isn't new; the training discipline that produced this version of it is the point. First you train the workspace, then the domain skill.
+Note: this repo is intentionally small — ~1.2K LOC of agent core plus two hot-loaded markdown skills. The goal is to keep it lightweight and transferable: the same core runs unchanged across BitGN's Enterprise OS benchmarks (PAC1 → ECOM → next). The executor is *softly* sandboxed — whitelisted `__import__` + `SAFE_BUILTINS` inside the same Python process, no subprocess, no Docker — because the VM's gRPC is the real boundary. Wrapping the executor in more isolation would be overengineering for no security gain.
+
+CodeAct (code as a tool) itself isn't new; the training discipline that produced this version of it is the point. First you train the workspace, then the domain skill.
 
 The system prompt (the version used during the blind window) lives in `agent.py`. Domain knowledge in `Skills/ecom.md`. Answer-review checklist in `Skills/presubmit.md`.
 
