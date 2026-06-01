@@ -1,6 +1,7 @@
 # A-Agent
 
-**1st place** at the [BitGN Agentic E-Commerce Challenge](https://bitgn.com/l/ecom1-accuracy) — **81.3 / 100** with OpenAI GPT-5.5, **68.1 / 100** with Qwen3.5-397B-A17B (Nebius), on the blind accuracy leaderboard.
+**1st place** at the [BitGN Agentic E-Commerce Challenge](https://bitgn.com/l/ecom1-accuracy) — **81.3 / 100** with OpenAI GPT-5.5 on the blind accuracy leaderboard.
+Open weights score **68.1 / 100** with Qwen3.5-397B-A17B (Nebius), 
 
 The challenge: BitGN's E-commerce challenge, featuring COLIBRIX ONE as lead partner, is a benchmark for agentic commerce — a simulated environment where AI agents handle the full customer journey (discovery, checkout, payment failures, fraud, returns, support) under business constraints. The goal is to test whether an agent can act safely before similar systems touch live commerce infrastructure.
 
