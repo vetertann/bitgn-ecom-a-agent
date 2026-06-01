@@ -40,7 +40,7 @@ Filter to specific tasks: `uv run python main.py <task-id> ...`. Full env refere
 
 ## Architecture
 
-One agent, one tool, one Python REPL that persists across turns. Three prompt layers, all hot-swappable.
+One agent, one tool, one Python REPL that persists across turns. Three prompt layers, two of them hot-swappable.
 
 ```mermaid
 flowchart TB
