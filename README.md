@@ -100,7 +100,7 @@ flowchart TB
 - **Scratchpad** — JSON dict surviving across `execute_python` calls. Holds gates, draft, answer, outcome, refs.
 - **Gates** — `identity`, `trust`, `rule-conflict`, `pre-write scope`, `pre-delete scope`. Set `"YES"` / `"NO"` / `"BLOCKED"`. `verify_scratchpad` (28 lines, in `verify.py`) blocks `OUTCOME_OK` if any gate is `"NO"`.
 - **Two-phase staged submit** — first `submit(...)` stages the answer and injects the presubmit checklist as the next observation. The model gets a full Python turn to verify, recompute, or revise before an identical second `submit(...)` finalizes `ws.answer(...)`.
-- **Any model** — Anthropic, OpenAI, Nebius, OpenRouter, DeepSeek, Cerebras. Native function calling is flaking, so best use is`prompt_json` (JSON-in-text), selected per run.
+- **Any model/provider** should work OOB — Anthropic, OpenAI, Nebius, OpenRouter, DeepSeek, Cerebras. Native function calling is flaking, so best use is`prompt_json` (JSON-in-text), selected per run.
 - **Domain tools** — just one, `cluster_tools.anomaly_clusters(ws, ...)` ships the SQL + haversine + implied-speed logic for fraud tasks as code, so the model decides verdicts instead of rewriting math.
 
 Target call structure: 2–3 `execute_python` calls per task — call 1 batches reads, call 2 decides + writes + submits, call 3 recovers if needed.
